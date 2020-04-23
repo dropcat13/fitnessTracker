@@ -2,9 +2,12 @@
 
 fetch("/api/workouts/range")
   .then(response => {
-    return response.json();
+    const trial = response.json();
+     console.log("Statsjs", trial);
+    return trial;
   })
   .then(data => {
+    console.log("data", data);
     populateChart(data);
   });
 

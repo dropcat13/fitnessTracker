@@ -1,6 +1,7 @@
 const express = require("express");
 const logger = require("morgan");
 const mongoose = require("mongoose");
+var path = require("path");
 
 const PORT = process.env.PORT || 3000;
 
@@ -15,29 +16,33 @@ app.use(express.json());
 
 app.use(express.static("public"));
 
-mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost/populatedb", { useNewUrlParser: true });
-
-db.Workout.create({ name: "Beginner Workout" })
-  .then(dbWorkout => {
-    console.log(dbWorkout);
-  })
-  .catch(({message}) => {
-    console.log(message);
-  });
-
-app.get("/exercises", (req, res) => {
-  db.Exercise.find({})
-    .then(dbExercise => {
-      res.json(dbExercise);
-    })
-    .catch(err => {
-      res.json(err);
-    });
+mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost/newdatabasedb", { useNewUrlParser: true, useFindAndModify: false },() => {
+console.log("Mongodb connected")
 });
 
-app.get("/workouts", (req, res) => {
+app.get("/exercise", (req, res) => {
+  res.sendFile(path.join(__dirname, "/public/exercise.html"))
+}) 
+
+app.get("/stats", (req, res) => {
+  res.sendFile(path.join(__dirname, "/public/stats.html"))
+}) 
+
+// app.get("/api/exercise/id", (req, res) => {
+//   db.Workout.findById(req.params.id)
+//     .then(dbWorkout => {
+//       console.log("Find exercises in a workout",dbWorkout)
+//       res.json(dbWorkout)
+//     })
+//     .catch(err => {
+//       res.json(err);
+//     });
+// });
+
+app.get("/api/workouts", (req, res) => {
   db.Workout.find({})
     .then(dbWorkout => {
+      console.log("All workouts",dbWorkout)
       res.json(dbWorkout);
     })
     .catch(err => {
@@ -45,21 +50,26 @@ app.get("/workouts", (req, res) => {
     });
 });
 
-app.post("/submit", ({ body }, res) => {
-  db.Exercise.create(body)
-    .then(({ _id }) => db.Workout.findOneAndUpdate({}, { $push: { exercises: _id } }, { new: true }))
-    .then(dbExercise => {
-      res.json(dbExercise);
+app.put("/api/workouts/:id", (req, res) => {
+  console.log(req.params.id,req.body)
+  db.Workout.update(
+    {_id:req.params.id}, 
+    {$push:{exercises:req.body}})
+    // .then(({ _id }) => db.Workout.findOneAndUpdate({}, { $push: { exercises: _id } }, { new: true }))
+    .then(dbWorkout => {
+      console.log("Update Array",dbWorkout)
+      res.json(dbWorkout);
     })
     .catch(err => {
       res.json(err);
     });
 });
 
-app.post("/submit", ({ body }, res) => {
+app.post("/api/workouts", ({ body }, res) => {
     db.Workout.create(body)
     .then(dbWorkout => {
         console.log(dbWorkout);
+        res.json(dbWorkout)
       })
       .catch(({ message }) => {
         console.log(message);
@@ -67,9 +77,11 @@ app.post("/submit", ({ body }, res) => {
      
   });
 
-app.get("/populatedworkout", (req, res) => {
+app.get("/api/workouts/range", (req, res) => {
+  console.log(res)
+  // db.Workout.find({$query:{},$orderby:{day:-1}})
   db.Workout.find({})
-    .populate("workouts")
+    .limit(20)
     .then(dbWorkout => {
       res.json(dbWorkout);
     })
