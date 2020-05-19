@@ -1,4 +1,4 @@
-# homework17-fitnessTracker
+# Fitness Tracker
 
 ## User Story
 
